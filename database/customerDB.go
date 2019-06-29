@@ -85,3 +85,22 @@ func AddNewCustomer(db *sql.DB, customer Customer) (Customer, error) {
 
 	return nCustomer, nil
 }
+
+func UpdateCustomerInfo(db *sql.DB, customer Customer) error {
+	query := `
+	UPDATE customers 
+	SET name=$2, email=$3, status=$4 
+	WHERE id=$1
+	`
+
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	if _, err := stmt.Exec(customer.ID, customer.Name, customer.Email, customer.Status); err != nil {
+		return err
+	}
+
+	return nil
+}

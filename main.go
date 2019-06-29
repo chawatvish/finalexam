@@ -36,7 +36,7 @@ func setupRouter() *gin.Engine {
 	r.GET("/customers", getCustomersHandler)
 	r.GET("/customers/:id", getCustomersByIDHandler)
 	r.POST("/customers", addCustomerHandler)
-	// r.PUT("/customers/:id", updateCustomerHandler)
+	r.PUT("/customers/:id", updateCustomerHandler)
 	// r.DELETE("/customers/:id", deleteCustomerByIDHandler)
 
 	return r
@@ -130,4 +130,30 @@ func addCustomerHandler(c *gin.Context) {
 	}
 
 	c.JSON(201, customer)
+}
+
+func updateCustomerHandler(c *gin.Context) {
+	db, err := database.Connect()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer db.Close()
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var customer database.Customer
+	c.BindJSON(&customer)
+	customer.ID = id
+	err = database.UpdateCustomerInfo(db, customer)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, customer)
 }
