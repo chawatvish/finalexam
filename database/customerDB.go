@@ -20,7 +20,7 @@ func CreateTable(db *sql.DB) error {
 
 	stmt := `
 	CREATE TABLE customers(
-		 id INT, 
+		 id SERIAL PRIMARY KEY, 
 		 name TEXT,
 		 email TEXT,
 		 status TEXT
@@ -67,4 +67,21 @@ func GetCustomerByID(db *sql.DB, id int) (Customer, error) {
 	}
 
 	return customer, nil
+}
+
+func AddNewCustomer(db *sql.DB, customer Customer) (Customer, error) {
+	query := `
+	INSERT INTO customers (name, email, status) 
+	VALUES ($1, $2, $3) 
+	RETURNING id, name, email, status
+	`
+
+	var nCustomer Customer
+	row := db.QueryRow(query, customer.Name, customer.Email, customer.Status)
+	err := row.Scan(&nCustomer.ID, &nCustomer.Name, &nCustomer.Email, &nCustomer.Status)
+	if err != nil {
+		return Customer{}, err
+	}
+
+	return nCustomer, nil
 }
