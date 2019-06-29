@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,10 +13,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var db *sql.DB
+
 func main() {
 	p := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	r := setupRouter()
-	setupDatabase()
+	db = setupDatabase()
 	r.Run(p)
 }
 
@@ -42,16 +45,20 @@ func setupRouter() *gin.Engine {
 	return r
 }
 
-func setupDatabase() {
+func setupDatabase() *sql.DB {
 	db, err := database.Connect()
 	if err != nil {
 		log.Fatal("Can't connect DB", err.Error())
+		defer db.Close()
 	}
 
 	err = database.CreateTable(db)
 	if err != nil {
 		log.Fatal("Can't create table", err.Error())
+		defer db.Close()
 	}
+
+	return db
 }
 
 func authenMiddleware(c *gin.Context) {
@@ -63,26 +70,22 @@ func authenMiddleware(c *gin.Context) {
 	}
 }
 
-// func responseError(c *gin.Context, errNumber int, err error) {
-// 	//Internal error print
-// 	fmt.Println("Error number : %d | info : %s", errNumber, err.Error())
+func responseError(c *gin.Context, errNumber int, err error, text string) {
+	//Internal error print
+	fmt.Println("Error number : %d | info : %s", errNumber, err.Error())
 
-// 	//Response to external
-// 	//TODO
-// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// }
+	//Response to external
+	//TODO
+	c.JSON(http.StatusInternalServerError, gin.H{"error": text})
+}
 
 func getCustomersHandler(c *gin.Context) {
-	db, err := database.Connect()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer db.Close()
-
 	customers, err := database.GetCustomers(db)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		responseError(c,
+			http.StatusInternalServerError,
+			err,
+			"Can't find customer")
 		return
 	}
 
@@ -90,22 +93,21 @@ func getCustomersHandler(c *gin.Context) {
 }
 
 func getCustomersByIDHandler(c *gin.Context) {
-	db, err := database.Connect()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer db.Close()
-
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		responseError(c,
+			http.StatusInternalServerError,
+			err,
+			http.StatusText(http.StatusInternalServerError))
 		return
 	}
 
 	todo, err := database.GetCustomerByID(db, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		responseError(c,
+			http.StatusInternalServerError,
+			err,
+			fmt.Sprintf("Can't find customer of id : %d", id))
 		return
 	}
 
@@ -113,19 +115,14 @@ func getCustomersByIDHandler(c *gin.Context) {
 }
 
 func addCustomerHandler(c *gin.Context) {
-	db, err := database.Connect()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer db.Close()
-
 	var customer database.Customer
 	c.BindJSON(&customer)
-	customer, err = database.AddNewCustomer(db, customer)
-	fmt.Println(customer)
+	customer, err := database.AddNewCustomer(db, customer)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		responseError(c,
+			http.StatusInternalServerError,
+			err,
+			"Can't create new customer")
 		return
 	}
 
@@ -133,16 +130,12 @@ func addCustomerHandler(c *gin.Context) {
 }
 
 func updateCustomerHandler(c *gin.Context) {
-	db, err := database.Connect()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer db.Close()
-
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		responseError(c,
+			http.StatusInternalServerError,
+			err,
+			http.StatusText(http.StatusInternalServerError))
 		return
 	}
 
@@ -151,7 +144,10 @@ func updateCustomerHandler(c *gin.Context) {
 	customer.ID = id
 	err = database.UpdateCustomerInfo(db, customer)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		responseError(c,
+			http.StatusInternalServerError,
+			err,
+			fmt.Sprintf("Can't update customer of id : %d", id))
 		return
 	}
 
@@ -159,22 +155,21 @@ func updateCustomerHandler(c *gin.Context) {
 }
 
 func deleteCustomerByIDHandler(c *gin.Context) {
-	db, err := database.Connect()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer db.Close()
-
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		responseError(c,
+			http.StatusInternalServerError,
+			err,
+			http.StatusText(http.StatusInternalServerError))
 		return
 	}
 
-	_, err = database.RemoveTodoByID(db, id)
+	_, err = database.DeleteTodoByID(db, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		responseError(c,
+			http.StatusInternalServerError,
+			err,
+			fmt.Sprintf("Can't delete customer of id : %d", id))
 		return
 	}
 

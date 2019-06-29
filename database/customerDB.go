@@ -12,13 +12,12 @@ type Customer struct {
 }
 
 func CreateTable(db *sql.DB) error {
-
 	row, err := db.Exec("SELECT 1 FROM customers LIMIT 1;")
 	if row != nil {
 		return nil
 	}
 
-	stmt := `
+	query := `
 	CREATE TABLE customers(
 		 id SERIAL PRIMARY KEY, 
 		 name TEXT,
@@ -26,12 +25,17 @@ func CreateTable(db *sql.DB) error {
 		 status TEXT
 		)
 	`
-	_, err = db.Exec(stmt)
+	_, err = db.Exec(query)
 	return err
 }
 
 func GetCustomers(db *sql.DB) ([]Customer, error) {
-	stmt, err := db.Prepare("SELECT id, name, email, status FROM customers")
+	query := `
+	SELECT id, name, email, status 
+	FROM customers
+	`
+
+	stmt, err := db.Prepare(query)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +58,13 @@ func GetCustomers(db *sql.DB) ([]Customer, error) {
 }
 
 func GetCustomerByID(db *sql.DB, id int) (Customer, error) {
-	stmt, err := db.Prepare("SELECT id, name, email, status FROM customers WHERE id=$1;")
+	query := `
+	SELECT id, name, email, status 
+	FROM customers 
+	WHERE id=$1
+	`
+
+	stmt, err := db.Prepare(query)
 	if err != nil {
 		return Customer{}, err
 	}
@@ -105,7 +115,7 @@ func UpdateCustomerInfo(db *sql.DB, customer Customer) error {
 	return nil
 }
 
-func RemoveTodoByID(db *sql.DB, id int) (Customer, error) {
+func DeleteTodoByID(db *sql.DB, id int) (Customer, error) {
 	query := `
 	DELETE FROM customers 
 	WHERE id=$1 
