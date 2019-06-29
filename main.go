@@ -37,7 +37,7 @@ func setupRouter() *gin.Engine {
 	r.GET("/customers/:id", getCustomersByIDHandler)
 	r.POST("/customers", addCustomerHandler)
 	r.PUT("/customers/:id", updateCustomerHandler)
-	// r.DELETE("/customers/:id", deleteCustomerByIDHandler)
+	r.DELETE("/customers/:id", deleteCustomerByIDHandler)
 
 	return r
 }
@@ -156,4 +156,27 @@ func updateCustomerHandler(c *gin.Context) {
 	}
 
 	c.JSON(200, customer)
+}
+
+func deleteCustomerByIDHandler(c *gin.Context) {
+	db, err := database.Connect()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer db.Close()
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	_, err = database.RemoveTodoByID(db, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "customer deleted"})
 }

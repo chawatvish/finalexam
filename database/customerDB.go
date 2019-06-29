@@ -104,3 +104,25 @@ func UpdateCustomerInfo(db *sql.DB, customer Customer) error {
 
 	return nil
 }
+
+func RemoveTodoByID(db *sql.DB, id int) (Customer, error) {
+	query := `
+	DELETE FROM customers 
+	WHERE id=$1 
+	RETURNING ID, name, email, status
+	`
+
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return Customer{}, err
+	}
+
+	var customer Customer
+	rows := stmt.QueryRow(id)
+	err = rows.Scan(&customer.ID, &customer.Name, &customer.Email, &customer.Status)
+	if err != nil {
+		return Customer{}, err
+	}
+
+	return customer, nil
+}
