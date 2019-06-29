@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/chawatvish/finalexam/database"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,15 +20,6 @@ func main() {
 	db = setupDatabase()
 	r.Run(p)
 }
-
-/*
-POST /customers
-GET /customers/:id
-GET /customers
-PUT /customers/:id
-DELETE /customers/:id
-
-*/
 
 func setupRouter() *gin.Engine {
 	r := gin.Default()
@@ -72,7 +62,7 @@ func authenMiddleware(c *gin.Context) {
 
 func responseError(c *gin.Context, errNumber int, err error, text string) {
 	//Internal error print
-	fmt.Println("Error number : %d | info : %s", errNumber, err.Error())
+	fmt.Printf("Error number : %d | info : %s", errNumber, err.Error())
 
 	//Response to external
 	//TODO
