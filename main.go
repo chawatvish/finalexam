@@ -86,9 +86,9 @@ func getCustomersByIDHandler(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		responseError(c,
-			http.StatusInternalServerError,
+			http.StatusBadRequest,
 			err,
-			http.StatusText(http.StatusInternalServerError))
+			"Wrong parameter")
 		return
 	}
 
@@ -123,9 +123,9 @@ func updateCustomerHandler(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		responseError(c,
-			http.StatusInternalServerError,
+			http.StatusBadRequest,
 			err,
-			http.StatusText(http.StatusInternalServerError))
+			"Wrong parameter")
 		return
 	}
 
@@ -148,9 +148,9 @@ func deleteCustomerByIDHandler(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		responseError(c,
-			http.StatusInternalServerError,
+			http.StatusBadRequest,
 			err,
-			http.StatusText(http.StatusInternalServerError))
+			"Wrong parameter")
 		return
 	}
 
